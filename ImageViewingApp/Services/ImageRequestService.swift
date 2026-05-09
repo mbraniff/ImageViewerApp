@@ -10,7 +10,11 @@ import Foundation
 fileprivate let url = URL(string: "https://api.imgur.com/3/gallery/search/")!
 
 class ImageRequestService {
-    func getImages(_ search: String) async -> ImgurImageResponse? {
+    func getImages(_ search: String, _ sort: String, _ window: String, _ page: Int) async -> ImgurImageResponse? {
+        let url = url
+            .appending(path: sort)
+            .appending(path: window)
+            .appending(path: String(page))
         var request = URLRequest(url: url.appending(queryItems: [URLQueryItem(name: "q", value: search)]))
         request.addValue(Secrets.clientId, forHTTPHeaderField: "Authorization")
         guard let (data, _) = try? await URLSession.shared.data(for: request) else {
