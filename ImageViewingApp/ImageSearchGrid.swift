@@ -8,67 +8,20 @@
 import SwiftUI
 import SDWebImageSwiftUI
 
-@Observable
-class ImageSearchGridViewModel {
-    @ObservationIgnored var service = ImageRequestService()
-    var images: [ImgurImage] = []
-    var page = 0
-    var window = "all"
-    var sort = "time"
-    var lastSearchTerm = ""
-    var isFetching = false
-    
-    func fetchImages(searchTerm: String) {
-        guard !self.isFetching else { return }
-        self.isFetching = true
-        self.images.removeAll()
-        self.lastSearchTerm = searchTerm
-        Task { @MainActor in
-            guard let results = await service.getImages(searchTerm, sort, window, page) else {
-                self.isFetching = false
-                return
-            }
-            
-            self.images = results.queries
-                .filter { !$0.nsfw }
-                .flatMap { $0.images }
-                .filter { $0.type != "video/mp4" }
-            self.isFetching = false
-        }
-    }
-    
-    func fetchMore() {
-        guard !self.isFetching else { return }
-        self.isFetching = true
-        self.page += 1
-        Task { @MainActor in
-            guard let results = await service.getImages(lastSearchTerm, sort, window, page) else {
-                self.isFetching = false
-                return
-            }
-            
-            self.images.append(contentsOf: results.queries
-                .filter { !$0.nsfw }
-                .flatMap { $0.images }
-                .filter { $0.type != "video/mp4"} )
-            self.isFetching = false
-        }
-    }
-    
-    func loadedImage(_ image: ImgurImage) {
-        if images.firstIndex(where: { $0.id == image.id }) ?? 0 >= images.count * 8/10 {
-            fetchMore()
-        }
-    }
-}
-
 struct ImageSearchGrid: View {
     @State var viewModel = ImageSearchGridViewModel()
     @State var search: String = ""
     var body: some View {
         ScrollView {
             if viewModel.images.isEmpty {
-                Text("No Images To View")
+                Spacer()
+                    .frame(height: 150)
+                Text(viewModel.isFetching ? "Loading..." : "No Images To View")
+                    .font(.title)
+                    .bold()
+                if viewModel.isFetching {
+                    ProgressView()
+                }
             } else {
                 LazyVGrid(columns: [GridItem(.fixed(150)), GridItem(.fixed(150))]) {
                     ForEach(viewModel.images) { image in
@@ -98,6 +51,32 @@ struct ImageSearchGrid: View {
                         }
                         .frame(height: 150)
                         .cornerRadius(25)
+                    }
+                }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    ForEach(ImgurSortType.allCases, id: \.self) { sort in
+                        Button(sort.rawValue.capitalized) {
+                            viewModel.sort = sort
+                        }
+                    }
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease")
+                }
+            }
+            if viewModel.sort == .top {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        ForEach(ImgurWindowType.allCases, id: \.self) { window in
+                            Button(window.rawValue.capitalized) {
+                                viewModel.window = window
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "calendar")
                     }
                 }
             }

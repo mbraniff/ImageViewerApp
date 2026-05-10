@@ -17,12 +17,17 @@ class ImageRequestService {
             .appending(path: String(page))
         var request = URLRequest(url: url.appending(queryItems: [URLQueryItem(name: "q", value: search)]))
         request.addValue(Secrets.clientId, forHTTPHeaderField: "Authorization")
-        guard let (data, _) = try? await URLSession.shared.data(for: request) else {
-            print("Failed to make request: ", request)
-            return nil
-        }
+        do {
+            let (data, _) = try await URLSession.shared.data(for: request)
         
-        let decoder = JSONDecoder()
-        return try? decoder.decode(ImgurImageResponse.self, from: data)
+            print("Received Respons:\n\(String(data: data, encoding: .utf8) ?? "nil")")
+            let decoder = JSONDecoder()
+            return try decoder.decode(ImgurImageResponse.self, from: data)
+        } catch let error as DecodingError {
+            print("Failed to decode response: \(error.localizedDescription)")
+        } catch let error {
+            print("Failed to perform request: \(error.localizedDescription)")
+        }
+        return nil
     }
 }

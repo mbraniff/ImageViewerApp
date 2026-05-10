@@ -9,7 +9,6 @@ import SwiftUI
 import SDWebImageSwiftUI
 
 struct ImageDetailView: View {
-    @State private var frame: CGSize?
     @State private var magnification: CGFloat = 1
     @GestureState private var magnificationState: CGFloat = 1
     @State private var offset = CGSize.zero
@@ -41,32 +40,17 @@ struct ImageDetailView: View {
     }
     
     var body: some View {
-        ZStack {
-            Color.clear
-                .background {
-                    GeometryReader { geometry in
-                        Text("")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .onAppear {
-                                self.frame = geometry.size
-                            }
-                            .onChange(of: geometry.size) {
-                                self.frame = geometry.size
-                            }
-                    }
-                }
-            WebImage(url: image) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            } placeholder: {
-                ProgressView()
-            }
-            .frame(width: frame?.width, height: frame?.height)
-            .gesture(dragGesture.simultaneously(with: magnifyGesture))
-            .offset(offset)
-            .scaleEffect(visibleMagnification)
+        WebImage(url: image) { image in
+            image
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        } placeholder: {
+            ProgressView()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .gesture(dragGesture.simultaneously(with: magnifyGesture))
+        .offset(offset)
+        .scaleEffect(visibleMagnification)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

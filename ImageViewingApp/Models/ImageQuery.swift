@@ -11,5 +11,5 @@ struct ImageQuery: Decodable {
     let id: String
     let title: String
     let nsfw: Bool
-    let images: [ImgurImage]
+    let images: [ImgurImage]?
 }
