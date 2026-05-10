@@ -43,7 +43,10 @@ class ImageSearchGridViewModel {
                 .filter { !$0.nsfw }
                 .compactMap { $0.images }
                 .flatMap { $0 }
-                .filter { $0.type != "video/mp4"} )
+                .filter {
+                    guard let type = $0.type else { return false }
+                    return !type.contains("video") && !type.contains("gif")
+                })
             self.isFetching = false
         }
     }
